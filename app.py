@@ -4,7 +4,7 @@ from dash import Dash, html, dcc
 from dash.dependencies import Input, Output, State
 import dash_bootstrap_components as dbc
 
-app = Dash(external_stylesheets = [dbc.themes.BOOTSTRAP])
+app = Dash(name='SEER',external_stylesheets = [dbc.themes.BOOTSTRAP])
 
 sources = [
     'GOES 6-hour',
