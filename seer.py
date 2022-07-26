@@ -6,8 +6,9 @@ from scipy.optimize import curve_fit
 from datetime import datetime
 
 import warnings
-from statsmodels.tools.sm_exceptions import ValueWarning
+from statsmodels.tools.sm_exceptions import ValueWarning,RuntimeWarning
 warnings.simplefilter('ignore',ValueWarning)
+warnings.simplefilter('ignore',RuntimeWarning)
 
 device_source = 'input/devices.csv'
 flux_source = 'GOES 6-hour'
