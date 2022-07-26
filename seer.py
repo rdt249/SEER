@@ -4,10 +4,10 @@ import plotly.express as px
 from plotly.subplots import make_subplots
 from scipy.optimize import curve_fit
 
-import warnings
-from statsmodels.tools.sm_exceptions import ValueWarning,RuntimeWarning
-warnings.simplefilter('ignore',ValueWarning)
-warnings.simplefilter('ignore',RuntimeWarning)
+# import warnings
+# from statsmodels.tools.sm_exceptions import ValueWarning,RuntimeWarning
+# warnings.simplefilter('ignore',ValueWarning)
+# warnings.simplefilter('ignore',RuntimeWarning)
 
 device_source = 'input/devices.csv'
 flux_source = 'GOES 6-hour'
