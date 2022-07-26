@@ -3,7 +3,6 @@ import numpy as np
 import plotly.express as px
 from plotly.subplots import make_subplots
 from scipy.optimize import curve_fit
-from datetime import datetime
 
 import warnings
 from statsmodels.tools.sm_exceptions import ValueWarning,RuntimeWarning
