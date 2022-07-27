@@ -1,17 +1,14 @@
-import seer
+import seer, cite
 from datetime import datetime
 from dash import Dash, html, dcc
 from dash.dependencies import Input, Output, State
 import dash_bootstrap_components as dbc
 
-app = Dash(name='SEER',external_stylesheets = [dbc.themes.BOOTSTRAP])
+app = Dash(title='SEER',external_stylesheets=[dbc.themes.BOOTSTRAP])
 
 sources = [
-    'GOES 6-hour',
-    'GOES 1-day',
-    'GOES 3-day',
-    'GOES 7-day',
-    'ACE 2-hour'
+    'GOES','ACE'
+    # 'GOES 6-hour','GOES 1-day','GOES 3-day','GOES 7-day','ACE 2-hour','ACE 1-day'
 ]
 
 app.layout = dbc.Container([
@@ -42,7 +39,8 @@ app.layout = dbc.Container([
         dbc.Row([
             dbc.Col([dcc.Graph(figure=seer.plot_fom(seer.time[0]),id='fom')],width=7),
             dbc.Col(html.Pre('',style={'font-size':'8px'},id='fom_report'),width=5)
-        ])
+        ]),
+        dcc.Markdown(cite.description,mathjax=True)
     ])
 ])
 

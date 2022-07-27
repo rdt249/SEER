@@ -4,13 +4,13 @@ import plotly.express as px
 from plotly.subplots import make_subplots
 from scipy.optimize import curve_fit
 
-# import warnings
-# from statsmodels.tools.sm_exceptions import ValueWarning,RuntimeWarning
-# warnings.simplefilter('ignore',ValueWarning)
-# warnings.simplefilter('ignore',RuntimeWarning)
+import warnings
+from statsmodels.tools.sm_exceptions import ValueWarning
+warnings.simplefilter('ignore',ValueWarning)
+#warnings.simplefilter('ignore',RuntimeWarning)
 
 device_source = 'input/devices.csv'
-flux_source = 'GOES 6-hour'
+flux_source = 'GOES'
 
 time = pd.Index([])
 
@@ -27,18 +27,29 @@ def linear(x,m):
 
 def get_data():
     if flux_source.split()[0] == 'ACE':
-        if flux_source.split()[1] == '2-hour':
-            df = pd.read_csv('https://services.swpc.noaa.gov/text/ace-sis.txt',skiprows=16,header=None,delimiter='\s+')
-            df['Time'] = df[0].astype(str) + df[1].astype(str) + df[2].astype(str) + df[3].astype(str).str.zfill(4)
-            df['Time'] = pd.to_datetime(df['Time'],format='%Y%m%d%H%M')
-            df = df.set_index('Time')[[7,9]].astype(float)
-            df.columns = [10,30]
-            df = df.stack().reset_index().set_index('Time')
-            df.index = df.index.strftime('%Y-%m-%d %H:%M')
-            df.columns = ['E (MeV)','Flux (pfu)']
-            df['Flux (pfu)'] = df['Flux (pfu)'].replace(-100000,np.nan)
+        # if flux_source.split()[1] == '2-hour':
+        #     df = pd.read_csv('https://services.swpc.noaa.gov/text/ace-sis.txt',skiprows=16,header=None,delimiter='\s+')
+        #     df['Time'] = df[0].astype(str) + df[1].astype(str) + df[2].astype(str) + df[3].astype(str).str.zfill(4)
+        #     df['Time'] = pd.to_datetime(df['Time'],format='%Y%m%d%H%M')
+        #     df = df.set_index('Time')[[7,9]].astype(float)
+        #     df.columns = [10,30]
+        #     df = df.stack().reset_index().set_index('Time')
+        #     df.index = df.index.strftime('%Y-%m-%d %H:%M')
+        #     df.columns = ['E (MeV)','Flux (pfu)']
+        #     df['Flux (pfu)'] = df['Flux (pfu)'].replace(-100000,np.nan)
+        # else:
+        url = 'https://services.swpc.noaa.gov/json/ace/sis/ace_sis_5m.json'
+        df = pd.read_json(url)
+        df['Time'] = pd.to_datetime(df['time_tag'])
+        df[[10,30]] = df[['p_gt_10','p_gt_30']]
+        df = df.set_index('Time')[[10,30]].stack().sort_index()
+        df = df.reset_index().set_index('Time')
+        df.index = df.index.strftime('%Y-%m-%d %H:%M')
+        df.columns = ['E (MeV)','Flux (pfu)']
+        df = df.drop(index=df.loc[df.index.value_counts().lt(2) == True].index)
     if flux_source.split()[0] == 'GOES':
-        url = 'https://services.swpc.noaa.gov/json/goes/primary/integral-protons-'+flux_source.split()[1]+'.json'
+        # url = 'https://services.swpc.noaa.gov/json/goes/primary/integral-protons-'+flux_source.split()[1]+'.json'
+        url = 'https://services.swpc.noaa.gov/json/goes/primary/integral-protons-1-day.json'
         df = pd.read_json(url)
         df['Time'] = pd.to_datetime(df['time_tag'])
         df = df.loc[df['satellite'] == 16]
@@ -48,6 +59,7 @@ def get_data():
         df = df.loc[df['E (MeV)'] > 1]
         df['Flux (pfu)'] = df['flux']
         df = df[['E (MeV)','Flux (pfu)']]
+        df = df.drop(index=df.loc[df.index.value_counts().lt(2) == True].index)
     return df.dropna()
 
 def refresh():
@@ -65,8 +77,9 @@ def refresh():
 
     spectra = pd.DataFrame(index=time,columns=['slope','intercept'])
     for t in time:
-        row = protons.loc[t]
-        spectra.loc[t,:] = np.polyfit(np.log10(row['E (MeV)']),row['Flux (pfu)'],1)
+        x,y = protons.loc[t]['E (MeV)'],protons.loc[t]['Flux (pfu)']
+        if(type(x) == np.float64): pass
+        else: spectra.loc[t,:] = np.polyfit(np.log10(x),y,1)
     spectra.to_csv('output/spectra.csv')
 
     rates = []
@@ -84,8 +97,8 @@ def refresh():
 
     severity = pd.DataFrame(index=time,columns=['S (/cm2/s)','slope','intercept','estimate'])
     for t in time:
-        row = rates.loc[t][:]
-        opt,cov = curve_fit(linear,row['FOM (cm2)'],row['Rate (/s)'])
+        x,y = rates.loc[t]['FOM (cm2)'],rates.loc[t]['Rate (/s)']
+        opt,cov = curve_fit(linear,x,y)
         est = 120 * spectra.loc[t]['slope'] + 50.58 * spectra.loc[t]['intercept']
         severity.loc[t][:] = list(opt) + spectra.loc[t][['slope','intercept']].to_list() + [est]
     severity['error'] = severity['S (/cm2/s)'] - severity['estimate']
@@ -145,7 +158,6 @@ def plot_combo(t=None):
     return fig
 
 def report(fig):
-    result = px.get_trendline_results(fig)
-    return '\n\n\n\n\n' + str(result.px_fit_results.iloc[0].summary())
+    return '\n\n\n\n\n' + str(px.get_trendline_results(fig).px_fit_results.iloc[0].summary())
 
 refresh()
