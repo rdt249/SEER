@@ -12,6 +12,12 @@ sources = [
 ]
 
 app.layout = dbc.Container([
+    dcc.Markdown('###### University of Tennessee at Chattanooga ~ Stephen Lawrence'),
+    html.Hr(),
+    dcc.Markdown(cite.introduction,mathjax=True),
+    html.Hr(),
+    dcc.Markdown(cite.description,mathjax=True),
+    html.Hr(),
     dbc.Row([
         dbc.Col(dcc.RadioItems(sources,value=seer.flux_source,inline=True,id='source'),width=5),
         dbc.Col(html.Div('Timestamp: ' + datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S'),id='timestamp'),width=5),
@@ -40,8 +46,10 @@ app.layout = dbc.Container([
             dbc.Col([dcc.Graph(figure=seer.plot_fom(seer.time[0]),id='fom')],width=7),
             dbc.Col(html.Pre('',style={'font-size':'8px'},id='fom_report'),width=5)
         ]),
-        dcc.Markdown(cite.description,mathjax=True)
-    ])
+    ]),
+    html.Hr(),
+    dcc.Markdown(cite.future_work,mathjax=True),
+    html.Hr(),
 ])
 
 @app.callback(
